@@ -15,8 +15,9 @@ A lightweight in-browser explorer for your Spotify history exports. Drop your JS
 - Automatic deduplication and smart merging of tracks with matching artist/title (skips generic titles like intro/outro/interlude).
 - Import progress indicator with per-file results (added vs. duplicate plays).
 - Filtering by date window and 30s play threshold to count meaningful listens.
-- Per-song insights: platforms, countries, first/last listen, monthly timeline, and play-by-play edits.
+- Per-song insights: platforms, countries, first/last listen, monthly timeline, comeback detection, and play-by-play edits.
 - Manual merge controls and inline delete for cleaning noisy history.
+- Artist/album click-through plus dataset dashboards (monthly momentum, top artists/albums).
 - CSV export of the current top list.
 
 ## Notes
