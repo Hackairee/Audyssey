@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audyssey | Spotify History Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo">🎧</div>
+          <div>
+            <p class="eyebrow">Audyssey Studio</p>
+            <h1>Spotify History Lab</h1>
+          </div>
+        </div>
+        <div class="actions">
+          <label class="button ghost" for="file-input">Upload history JSON</label>
+          <input id="file-input" type="file" accept="application/json" multiple />
+          <button class="button" id="reset-state">Reset state</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="panel filters">
+          <section class="card">
+            <header>
+              <p class="eyebrow">Timeframe</p>
+              <h2>Pick a window</h2>
+            </header>
+            <div class="inputs">
+              <label>
+                <span>From</span>
+                <input type="date" id="start-date" />
+              </label>
+              <label>
+                <span>To</span>
+                <input type="date" id="end-date" />
+              </label>
+            </div>
+            <div class="toggles">
+              <label class="switch">
+                <input type="checkbox" id="thirty-threshold" checked />
+                <span class="slider"></span>
+                <span class="switch-label">Count plays &gt; 30s</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="merge-duplicates" checked />
+                <span class="slider"></span>
+                <span class="switch-label">Smart merge duplicates</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="card">
+            <header>
+              <p class="eyebrow">Focus</p>
+              <h2>Search &amp; filter</h2>
+            </header>
+            <input type="search" id="search" placeholder="Search songs, artists, albums" />
+            <div class="legend">
+              <div class="pill done"></div>
+              <span>Marked in last 4 months</span>
+            </div>
+          </section>
+
+          <section class="card mini">
+            <header>
+              <p class="eyebrow">Stats</p>
+              <h2>Dataset pulse</h2>
+            </header>
+            <ul class="stat-grid" id="dataset-stats"></ul>
+          </section>
+        </aside>
+
+        <section class="panel main">
+          <section class="card">
+            <header class="card-header">
+              <div>
+                <p class="eyebrow">Leaders</p>
+                <h2>Top songs</h2>
+              </div>
+              <div class="inline-actions">
+                <select id="sort-mode">
+                  <option value="plays">By plays</option>
+                  <option value="time">By time played</option>
+                  <option value="recent">Most recent</option>
+                </select>
+                <button class="button ghost" id="export-csv">Export CSV</button>
+              </div>
+            </header>
+            <div id="tracks" class="track-list"></div>
+          </section>
+
+          <section class="card" id="detail-card">
+            <header>
+              <p class="eyebrow">Insight</p>
+              <h2>Song details</h2>
+            </header>
+            <div id="detail-empty" class="empty">Select a track to deep dive.</div>
+            <div id="detail" class="detail hidden">
+              <div class="detail-header">
+                <div>
+                  <p class="eyebrow" id="detail-artist"></p>
+                  <h3 id="detail-title"></h3>
+                  <p class="sub" id="detail-album"></p>
+                </div>
+                <div class="tag" id="detail-age"></div>
+              </div>
+              <div class="detail-grid" id="detail-stats"></div>
+              <div class="timeline">
+                <h4>Play timeline</h4>
+                <div id="timeline-chart"></div>
+              </div>
+              <div class="plays" id="plays"></div>
+              <div class="merge">
+                <label>Merge into:
+                  <select id="merge-target"></select>
+                </label>
+                <button class="button ghost" id="merge-button">Merge</button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Keep digging your listening story. Data stays local in your browser.</p>
+      </footer>
+    </div>
+
+    <script type="module" src="assets/app.js"></script>
+  </body>
+</html>
