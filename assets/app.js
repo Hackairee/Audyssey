@@ -33,7 +33,6 @@ const mergeSelect = document.querySelector('#merge-target');
 const mergeButton = document.querySelector('#merge-button');
 const platformChart = document.querySelector('#platform-chart');
 const countryChart = document.querySelector('#country-chart');
-const uploadTrigger = document.querySelector('#upload-trigger');
 
 const DONE_WINDOW_MS = 1000 * 60 * 60 * 24 * 30 * 4; // 4 months-ish
 const FORBIDDEN_TITLES = ['intro', 'outro', 'interlude'];
