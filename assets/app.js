@@ -10,6 +10,10 @@ const sortMode = document.querySelector('#sort-mode');
 const exportBtn = document.querySelector('#export-csv');
 const resetStateBtn = document.querySelector('#reset-state');
 
+const globalTimeline = document.querySelector('#global-timeline');
+const topArtistsList = document.querySelector('#top-artists');
+const topAlbumsList = document.querySelector('#top-albums');
+
 const uploadStatus = document.querySelector('#upload-status');
 const uploadProgress = document.querySelector('#upload-progress');
 const uploadList = document.querySelector('#upload-list');
@@ -22,10 +26,14 @@ const detailTitle = document.querySelector('#detail-title');
 const detailAlbum = document.querySelector('#detail-album');
 const detailAge = document.querySelector('#detail-age');
 const detailStats = document.querySelector('#detail-stats');
+const detailPatterns = document.querySelector('#detail-patterns');
 const timelineChart = document.querySelector('#timeline-chart');
 const playsContainer = document.querySelector('#plays');
 const mergeSelect = document.querySelector('#merge-target');
 const mergeButton = document.querySelector('#merge-button');
+const platformChart = document.querySelector('#platform-chart');
+const countryChart = document.querySelector('#country-chart');
+const uploadTrigger = document.querySelector('#upload-trigger');
 
 const DONE_WINDOW_MS = 1000 * 60 * 60 * 24 * 30 * 4; // 4 months-ish
 const FORBIDDEN_TITLES = ['intro', 'outro', 'interlude'];
@@ -41,11 +49,29 @@ if (persistedData.length) {
   refresh();
 }
 
+detailArtist.addEventListener('click', () => {
+  if (!detailArtist.textContent) return;
+  searchInput.value = detailArtist.textContent;
+  refresh();
+});
+
+detailAlbum.addEventListener('click', () => {
+  if (!detailAlbum.textContent) return;
+  searchInput.value = detailAlbum.textContent;
+  refresh();
+});
+
 fileInput.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []);
   if (!files.length) return;
   await processUploads(files);
 });
+
+if (uploadTrigger) {
+  uploadTrigger.addEventListener('click', () => {
+    fileInput?.click();
+  });
+}
 
 resetStateBtn.addEventListener('click', () => {
   localStorage.clear();
@@ -55,6 +81,7 @@ resetStateBtn.addEventListener('click', () => {
   renderTracks();
   renderDetail();
   renderDatasetStats();
+  renderGlobalInsights();
   setUploadStatus('Waiting for files.', 0);
   uploadList.innerHTML = '';
 });
@@ -164,6 +191,7 @@ function refresh() {
   renderTracks();
   renderDetail();
   renderDatasetStats();
+  renderGlobalInsights();
   persistPlays();
 }
 
@@ -309,6 +337,49 @@ function renderDatasetStats() {
     .join('');
 }
 
+function renderGlobalInsights() {
+  const filtered = filteredPlays();
+  renderMicroTimeline(filtered);
+  renderChips(topArtistsList, tally(filtered, 'master_metadata_album_artist_name'));
+  renderChips(topAlbumsList, tally(filtered, 'master_metadata_album_album_name'));
+}
+
+function filteredPlays() {
+  const start = startDateInput.value ? new Date(startDateInput.value) : null;
+  const end = endDateInput.value ? new Date(endDateInput.value) : null;
+  return plays.filter((play) => {
+    const date = new Date(play.ts);
+    if (start && date < start) return false;
+    if (end && date > end) return false;
+    if (thresholdToggle.checked && Number(play.ms_played || 0) < 30000) return false;
+    return true;
+  });
+}
+
+function renderMicroTimeline(list) {
+  const buckets = new Map();
+  list.forEach((p) => {
+    const d = new Date(p.ts);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    buckets.set(key, (buckets.get(key) || 0) + 1);
+  });
+  const entries = Array.from(buckets.entries()).sort();
+  const max = Math.max(...entries.map(([, v]) => v), 1);
+  globalTimeline.innerHTML = entries
+    .map(([label, value]) => {
+      const height = Math.max(6, (value / max) * 90);
+      return `<div style="flex:1; text-align:center;">\n        <div class="bar" style="height:${height}px"></div>\n        <div class="bar-label">${label}</div>\n      </div>`;
+    })
+    .join('');
+}
+
+function renderChips(container, tallyMap) {
+  const entries = Array.from(tallyMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  container.innerHTML = entries
+    .map(([label, count]) => `<li><span class="label">${label || 'Unknown'}</span><span class="value">${count} plays</span></li>`)
+    .join('');
+}
+
 function summarize(list) {
   if (!list.length) return { count: 0, time: 0 };
   const sorted = [...list].sort((a, b) => new Date(a.ts) - new Date(b.ts));
@@ -348,9 +419,34 @@ function renderDetail() {
     .map((c) => `<div class="cardlet"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`)
     .join('');
 
+  renderPatterns(list);
   renderTimeline(list);
   renderPlays(list);
   renderMergeOptions();
+  renderSplits(platformChart, stats.platforms);
+  renderSplits(countryChart, stats.countries);
+}
+
+function renderPatterns(list) {
+  const sorted = [...list].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  let longestGap = 0;
+  let comebackCount = 0;
+  for (let i = 1; i < sorted.length; i++) {
+    const gap = new Date(sorted[i].ts) - new Date(sorted[i - 1].ts);
+    const gapDays = gap / (1000 * 60 * 60 * 24);
+    if (gapDays > longestGap) longestGap = gapDays;
+    if (gapDays >= 60) comebackCount += 1;
+  }
+  const monthsActive = new Set(sorted.map((p) => new Date(p.ts).toISOString().slice(0, 7))).size;
+  const patterns = [
+    { label: 'Active months', value: monthsActive || '—' },
+    { label: 'Longest gap', value: longestGap ? `${Math.round(longestGap)} days` : '—' },
+    { label: 'Comebacks (≥60d)', value: comebackCount },
+    { label: 'Median session', value: `${formatMinutes(median(list.map((p) => Number(p.ms_played || 0))))}` },
+  ];
+  detailPatterns.innerHTML = patterns
+    .map((c) => `<div class="cardlet"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`)
+    .join('');
 }
 
 function renderTimeline(list) {
@@ -370,6 +466,20 @@ function renderTimeline(list) {
         <div class="bar-label">${label}</div>
       </div>`;
     })
+    .join('');
+}
+
+function renderSplits(container, tallyMap) {
+  const entries = Array.from(tallyMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const total = entries.reduce((acc, [, count]) => acc + count, 0) || 1;
+  container.innerHTML = entries
+    .map(
+      ([label, count]) => `<div class="bar-row">
+        <div class="label">${label || 'Unknown'}</div>
+        <div class="bar-shell"><div class="bar-fill" style="width:${((count / total) * 100).toFixed(1)}%"></div></div>
+        <div class="value">${count}</div>
+      </div>`
+    )
     .join('');
 }
 
@@ -428,6 +538,14 @@ function formatMinutes(ms) {
   const min = Number(ms) / 60000;
   if (min < 1) return `${(ms / 1000).toFixed(0)}s`;
   return `${min.toFixed(1)} min`;
+}
+
+function median(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) return (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted[mid];
 }
 
 function markDone(key) {
