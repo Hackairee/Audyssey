@@ -109,6 +109,39 @@
             <div id="tracks" class="track-list"></div>
           </section>
 
+          <section class="card">
+            <header class="card-header">
+              <div>
+                <p class="eyebrow">Trends</p>
+                <h2>Deep dive dashboards</h2>
+              </div>
+              <p class="sub">Built from the current filters and 30s threshold.</p>
+            </header>
+            <div class="insights-grid">
+              <div class="insight">
+                <div class="insight-header">
+                  <h4>Monthly momentum</h4>
+                  <span class="pill mini">Plays</span>
+                </div>
+                <div id="global-timeline" class="micro-chart"></div>
+              </div>
+              <div class="insight">
+                <div class="insight-header">
+                  <h4>Top artists</h4>
+                  <span class="pill mini">By plays</span>
+                </div>
+                <ul id="top-artists" class="chip-list"></ul>
+              </div>
+              <div class="insight">
+                <div class="insight-header">
+                  <h4>Top albums</h4>
+                  <span class="pill mini">By plays</span>
+                </div>
+                <ul id="top-albums" class="chip-list"></ul>
+              </div>
+            </div>
+          </section>
+
           <section class="card" id="detail-card">
             <header>
               <p class="eyebrow">Insight</p>
@@ -118,16 +151,27 @@
             <div id="detail" class="detail hidden">
               <div class="detail-header">
                 <div>
-                  <p class="eyebrow" id="detail-artist"></p>
+                  <p class="eyebrow clickable" id="detail-artist" title="Filter by artist"></p>
                   <h3 id="detail-title"></h3>
-                  <p class="sub" id="detail-album"></p>
+                  <p class="sub clickable" id="detail-album" title="Filter by album"></p>
                 </div>
                 <div class="tag" id="detail-age"></div>
               </div>
               <div class="detail-grid" id="detail-stats"></div>
+              <div class="detail-grid minor" id="detail-patterns"></div>
               <div class="timeline">
                 <h4>Play timeline</h4>
                 <div id="timeline-chart"></div>
+              </div>
+              <div class="detail-splits">
+                <div>
+                  <h4>Platform mix</h4>
+                  <div id="platform-chart" class="bar-list"></div>
+                </div>
+                <div>
+                  <h4>Country mix</h4>
+                  <div id="country-chart" class="bar-list"></div>
+                </div>
               </div>
               <div class="plays" id="plays"></div>
               <div class="merge">
