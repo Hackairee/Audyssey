@@ -66,6 +66,12 @@ fileInput.addEventListener('change', async (e) => {
   await processUploads(files);
 });
 
+if (uploadTrigger) {
+  uploadTrigger.addEventListener('click', () => {
+    fileInput?.click();
+  });
+}
+
 resetStateBtn.addEventListener('click', () => {
   localStorage.clear();
   plays = [];
