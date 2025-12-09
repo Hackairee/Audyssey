@@ -106,8 +106,8 @@ async function processUploads(files) {
     const file = files[i];
     setUploadStatus(`Reading ${file.name} (${i + 1}/${files.length})`, (i / files.length) * 100);
     try {
-      const text = await readFileText(file);
-      const json = safeParseJson(text);
+      const text = await file.text();
+      const json = JSON.parse(text);
       const entries = Array.isArray(json) ? json : [json];
       const result = ingest(entries);
       added += result.added;
@@ -122,39 +122,6 @@ async function processUploads(files) {
   fileInput.value = '';
   refresh();
   setUploadStatus(`Finished. Added ${added} plays (${ignored} skipped as duplicates).`, 100);
-}
-
-async function readFileText(file) {
-  if (file.text) {
-    return file.text();
-  }
-  // Safari < 14 fallback
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
-    reader.readAsText(file);
-  });
-}
-
-function safeParseJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    // Attempt to recover from line-delimited JSON
-    const lines = text
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    if (lines.length > 1) {
-      try {
-        return lines.map((line) => JSON.parse(line));
-      } catch (e) {
-        // fallthrough
-      }
-    }
-    throw err;
-  }
 }
 
 function setUploadStatus(text, pct) {
