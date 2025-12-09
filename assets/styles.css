@@ -288,6 +288,47 @@ input, select {
 .stat-grid .label { color: var(--muted); font-size: 12px; }
 .stat-grid .value { font-weight: 700; margin-top: 4px; }
 
+.progress {
+  width: 100%;
+  background: var(--surface);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #7dd3fc, #a78bfa);
+  transition: width 0.2s ease;
+}
+
+.status {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.upload-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upload-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.upload-item strong { display: block; font-size: 14px; }
+.upload-item .meta { color: var(--muted); font-size: 12px; }
+
 .detail { display: grid; gap: 12px; }
 .detail.hidden { display: none; }
 .detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }

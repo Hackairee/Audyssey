@@ -10,6 +10,10 @@ const sortMode = document.querySelector('#sort-mode');
 const exportBtn = document.querySelector('#export-csv');
 const resetStateBtn = document.querySelector('#reset-state');
 
+const uploadStatus = document.querySelector('#upload-status');
+const uploadProgress = document.querySelector('#upload-progress');
+const uploadList = document.querySelector('#upload-list');
+
 const detailCard = document.querySelector('#detail-card');
 const detailEmpty = document.querySelector('#detail-empty');
 const detailPane = document.querySelector('#detail');
@@ -39,21 +43,8 @@ if (persistedData.length) {
 
 fileInput.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []);
-  for (const file of files) {
-    const text = await file.text();
-    try {
-      const json = JSON.parse(text);
-      if (Array.isArray(json)) {
-        ingest(json);
-      } else if (typeof json === 'object') {
-        ingest([json]);
-      }
-    } catch (err) {
-      console.error('Failed to parse', file.name, err);
-    }
-  }
-  fileInput.value = '';
-  refresh();
+  if (!files.length) return;
+  await processUploads(files);
 });
 
 resetStateBtn.addEventListener('click', () => {
@@ -64,6 +55,8 @@ resetStateBtn.addEventListener('click', () => {
   renderTracks();
   renderDetail();
   renderDatasetStats();
+  setUploadStatus('Waiting for files.', 0);
+  uploadList.innerHTML = '';
 });
 
 [startDateInput, endDateInput, searchInput, thresholdToggle, mergeToggle, sortMode].forEach((el) =>
@@ -103,16 +96,67 @@ mergeButton.addEventListener('click', () => {
   refresh();
 });
 
+async function processUploads(files) {
+  uploadList.innerHTML = '';
+  setUploadStatus('Import starting…', 0);
+
+  let added = 0;
+  let ignored = 0;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    setUploadStatus(`Reading ${file.name} (${i + 1}/${files.length})`, (i / files.length) * 100);
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const entries = Array.isArray(json) ? json : [json];
+      const result = ingest(entries);
+      added += result.added;
+      ignored += result.ignored;
+      addUploadItem(file.name, result.added, result.ignored, null);
+    } catch (err) {
+      console.error('Failed to parse', file.name, err);
+      addUploadItem(file.name, 0, 0, err);
+    }
+  }
+
+  fileInput.value = '';
+  refresh();
+  setUploadStatus(`Finished. Added ${added} plays (${ignored} skipped as duplicates).`, 100);
+}
+
+function setUploadStatus(text, pct) {
+  uploadStatus.textContent = text;
+  uploadProgress.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+}
+
+function addUploadItem(name, added, ignored, error) {
+  const li = document.createElement('li');
+  li.className = 'upload-item';
+  if (error) {
+    li.innerHTML = `<strong>${name}</strong><div class="meta">Failed: ${error.message || error}</div>`;
+  } else {
+    li.innerHTML = `<strong>${name}</strong><div class="meta">${added} added · ${ignored} duplicates</div>`;
+  }
+  uploadList.prepend(li);
+}
+
 function ingest(items) {
   const existingKeys = new Set(plays.map((p) => p._dedupeKey));
+  let added = 0;
+  let ignored = 0;
   for (const entry of items) {
     const key = `${entry.ts}-${entry.spotify_track_uri || entry.master_metadata_track_name}`;
-    if (existingKeys.has(key)) continue;
+    if (existingKeys.has(key)) {
+      ignored += 1;
+      continue;
+    }
     plays.push({ ...entry, _dedupeKey: key });
+    added += 1;
     existingKeys.add(key);
   }
   setDefaultDates();
   persistPlays();
+  return { added, ignored };
 }
 
 function refresh() {
